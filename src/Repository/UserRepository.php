@@ -1,4 +1,4 @@
-<?php
+// src/Repository/UserRepository.php
 
 namespace App\Repository;
 
@@ -11,6 +11,11 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
+ *
+ * @method User|null find($id, $lockMode = null, $lockVersion = null)
+ * @method User|null findOneBy(array $criteria, array $orderBy = null)
+ * @method User[]    findAll()
+ * @method User[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
@@ -33,28 +38,88 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-//    /**
-//     * @return User[] Returns an array of User objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('u.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findActiveUsers(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.isActive = :active')
+            ->setParameter('active', true)
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 
-//    public function findOneBySomeField($value): ?User
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findByRole(string $role): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
+            ->setParameter('role', json_encode($role))
+            ->andWhere('u.isActive = :active')
+            ->setParameter('active', true)
+            ->orderBy('u.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findManagers(): array
+    {
+        return $this->findByRole('ROLE_MANAGER');
+    }
+
+    public function findAdmins(): array
+    {
+        return $this->findByRole('ROLE_ADMIN');
+    }
+
+    public function findUserByEmailOrUsername(string $identifier): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.email = :identifier OR u.username = :identifier')
+            ->setParameter('identifier', $identifier)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function getStatistics(): array
+    {
+        $qb = $this->createQueryBuilder('u');
+        
+        return [
+            'total' => $qb->select('COUNT(u.id)')->getQuery()->getSingleScalarResult(),
+            'active' => $qb->select('COUNT(u.id)')
+                ->andWhere('u.isActive = :active')
+                ->setParameter('active', true)
+                ->getQuery()
+                ->getSingleScalarResult(),
+            'admins' => $qb->select('COUNT(u.id)')
+                ->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
+                ->setParameter('role', json_encode('ROLE_ADMIN'))
+                ->getQuery()
+                ->getSingleScalarResult(),
+            'managers' => $qb->select('COUNT(u.id)')
+                ->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
+                ->setParameter('role', json_encode('ROLE_MANAGER'))
+                ->getQuery()
+                ->getSingleScalarResult(),
+        ];
+    }
+
+    public function lockUser(User $user, int $minutes = 15): void
+    {
+        $lockedUntil = new \DateTime();
+        $lockedUntil->modify("+{$minutes} minutes");
+        
+        $user->setLockedUntil($lockedUntil);
+        $user->setFailedLoginAttempts(0);
+        
+        $this->getEntityManager()->flush();
+    }
+
+    public function unlockUser(User $user): void
+    {
+        $user->setLockedUntil(null);
+        $user->setFailedLoginAttempts(0);
+        
+        $this->getEntityManager()->flush();
+    }
 }
