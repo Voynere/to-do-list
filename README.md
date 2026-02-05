@@ -10,4 +10,6 @@ composer require symfony/validator
 
 # Установка функционала сброса пароля
 composer require symfonycasts/reset-password-bundle
+
+composer require symfony/rate-limiter
 ```

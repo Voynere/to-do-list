@@ -1,0 +1,194 @@
+{# templates/security/login.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Вход в CRM систему{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        
+        .login-logo {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .login-subtitle {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .login-body {
+            padding: 2.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+            border: none;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            width: 100%;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .session-expired {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="login-card">
+    <div class="login-header">
+        <div class="login-logo">CRM СИСТЕМА</div>
+        <div class="login-subtitle">Панель управления бизнесом</div>
+    </div>
+    
+    <div class="login-body">
+        {% if session_expired %}
+            <div class="session-expired">
+                <i class="fas fa-clock me-2"></i>
+                Ваша сессия истекла. Пожалуйста, войдите снова.
+            </div>
+        {% endif %}
+        
+        {% if error %}
+            <div class="alert alert-danger mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+        
+        <form method="post" action="{{ path('app_login') }}">
+            <div class="mb-4">
+                <label for="inputEmail" class="form-label">
+                    <i class="fas fa-envelope me-2"></i>Введите логин (Email)
+                </label>
+                <input type="email" 
+                       value="{{ last_username }}" 
+                       name="email" 
+                       id="inputEmail" 
+                       class="form-control" 
+                       placeholder="user@example.com"
+                       autocomplete="email"
+                       required 
+                       autofocus>
+            </div>
+            
+            <div class="mb-4">
+                <label for="inputPassword" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Введите пароль
+                </label>
+                <input type="password" 
+                       name="password" 
+                       id="inputPassword" 
+                       class="form-control" 
+                       placeholder="Ваш пароль"
+                       autocomplete="current-password"
+                       required>
+            </div>
+            
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="_remember_me" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">
+                        Запомнить меня
+                    </label>
+                </div>
+                <a href="{{ path('app_forgot_password_request') }}" class="text-decoration-none">
+                    Забыли пароль?
+                </a>
+            </div>
+            
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            
+            <button type="submit" class="btn btn-login mb-4">
+                <i class="fas fa-sign-in-alt me-2"></i>Войти в кабинет
+            </button>
+        </form>
+        
+        <div class="login-footer">
+            <p class="text-muted mb-2">
+                <i class="fas fa-info-circle me-2"></i>
+                Для доступа к системе требуется авторизация
+            </p>
+            <small class="text-muted">
+                CRM System &copy; {{ "now"|date("Y") }}
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
